@@ -1,7 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// These are public, RLS-protected client keys (not secrets) — safe to ship
+// to the browser. Env vars can override them for a different environment.
+const supabaseUrl =
+  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://qasbvikudnnnqaocbayp.supabase.co";
+const supabaseAnonKey =
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+  "sb_publishable_Uu6jT499aqt914-sokdtkA_IWtQrRvB";
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
