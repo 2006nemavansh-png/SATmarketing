@@ -99,22 +99,32 @@ export default function PitchApp({ name }: { name: string }) {
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">SAT Marketing</h1>
+        <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-50">
+          SAT Marketing
+        </h1>
         <button
           onClick={switchUser}
-          className="text-sm text-slate-500 hover:text-slate-800"
+          className="rounded-md px-2 py-1 text-sm text-slate-600 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:text-slate-400 dark:hover:text-slate-100"
         >
-          Pitching as <span className="font-medium">{name}</span> · switch
+          Pitching as{" "}
+          <span className="font-semibold text-slate-900 dark:text-slate-100">
+            {name}
+          </span>{" "}
+          · switch
         </button>
       </div>
 
-      <div className="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <label className="text-sm font-medium text-slate-700">
+      <div className="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <label
+          htmlFor="company-search"
+          className="text-sm font-medium text-slate-800 dark:text-slate-200"
+        >
           Search a company before you pitch
         </label>
         <input
+          id="company-search"
           autoFocus
-          className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+          className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none placeholder:text-slate-500 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
           placeholder="Type a company name..."
           value={query}
           onChange={(e) => {
@@ -124,7 +134,9 @@ export default function PitchApp({ name }: { name: string }) {
         />
 
         {searching && (
-          <p className="mt-2 text-sm text-slate-400">Searching...</p>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+            Searching...
+          </p>
         )}
 
         {!searching && query.trim() && results.length > 0 && (
@@ -132,14 +144,16 @@ export default function PitchApp({ name }: { name: string }) {
             {results.map((r) => (
               <div
                 key={r.id}
-                className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm"
+                className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-950 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-100"
               >
-                <span className="font-medium">{r.company_name}</span>{" "}
+                <span className="font-semibold">{r.company_name}</span>{" "}
                 already pitched by{" "}
-                <span className="font-medium">{r.pitched_by}</span> on{" "}
+                <span className="font-semibold">{r.pitched_by}</span> on{" "}
                 {formatDate(r.created_at)}
                 {r.notes && (
-                  <p className="mt-1 text-slate-500">Notes: {r.notes}</p>
+                  <p className="mt-1 text-amber-900 dark:text-amber-200">
+                    Notes: {r.notes}
+                  </p>
                 )}
               </div>
             ))}
@@ -147,15 +161,19 @@ export default function PitchApp({ name }: { name: string }) {
         )}
 
         {!searching && query.trim() && results.length === 0 && (
-          <p className="mt-3 text-sm text-emerald-600">
+          <p className="mt-3 text-sm font-medium text-emerald-700 dark:text-emerald-400">
             No matches — this company hasn&apos;t been pitched yet.
           </p>
         )}
 
         {!exactMatch && query.trim() && (
-          <div className="mt-4 space-y-2 border-t border-slate-100 pt-4">
+          <div className="mt-4 space-y-2 border-t border-slate-200 pt-4 dark:border-slate-700">
+            <label htmlFor="pitch-notes" className="sr-only">
+              Notes
+            </label>
             <input
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              id="pitch-notes"
+              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none placeholder:text-slate-500 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
               placeholder="Notes (optional)"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -163,7 +181,7 @@ export default function PitchApp({ name }: { name: string }) {
             <button
               onClick={logPitch}
               disabled={saving}
-              className="w-full rounded-md bg-slate-900 py-2 text-sm font-medium text-white disabled:opacity-40"
+              className="w-full rounded-md bg-indigo-700 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
             >
               {saving ? "Saving..." : `Log "${query.trim()}" as pitched`}
             </button>
@@ -172,8 +190,10 @@ export default function PitchApp({ name }: { name: string }) {
 
         {status && (
           <p
-            className={`mt-3 text-sm ${
-              status.type === "ok" ? "text-emerald-600" : "text-red-600"
+            className={`mt-3 text-sm font-medium ${
+              status.type === "ok"
+                ? "text-emerald-700 dark:text-emerald-400"
+                : "text-red-700 dark:text-red-400"
             }`}
           >
             {status.text}
@@ -182,22 +202,29 @@ export default function PitchApp({ name }: { name: string }) {
       </div>
 
       <div className="mt-8">
-        <h2 className="text-sm font-medium text-slate-700">
+        <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
           Recently pitched
         </h2>
         <div className="mt-3 space-y-2">
           {recent.length === 0 && (
-            <p className="text-sm text-slate-400">No pitches logged yet.</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              No pitches logged yet.
+            </p>
           )}
           {recent.map((r) => (
             <div
               key={r.id}
-              className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+              className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
             >
-              <span className="font-medium">{r.company_name}</span> ·{" "}
-              {r.pitched_by} · {formatDate(r.created_at)}
+              <span className="font-semibold">{r.company_name}</span>
+              <span className="text-slate-600 dark:text-slate-400">
+                {" "}
+                · {r.pitched_by} · {formatDate(r.created_at)}
+              </span>
               {r.notes && (
-                <p className="mt-1 text-slate-500">Notes: {r.notes}</p>
+                <p className="mt-1 text-slate-600 dark:text-slate-400">
+                  Notes: {r.notes}
+                </p>
               )}
             </div>
           ))}
