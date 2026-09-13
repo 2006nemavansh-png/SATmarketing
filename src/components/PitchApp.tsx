@@ -16,24 +16,43 @@ export default function PitchApp({ name }: { name: string }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Pitch[]>([]);
   const [searching, setSearching] = useState(false);
-  const [recent, setRecent] = useState<Pitch[]>([]);
+  const [all, setAll] = useState<Pitch[]>([]);
   const [notes, setNotes] = useState("");
   const [status, setStatus] = useState<{ type: "ok" | "err"; text: string } | null>(
     null
   );
   const [saving, setSaving] = useState(false);
 
-  async function loadRecent() {
+  async function loadAll() {
     const { data } = await supabase
       .from("pitches")
       .select("*")
-      .order("created_at", { ascending: false })
-      .limit(20);
-    setRecent(data ?? []);
+      .order("created_at", { ascending: false });
+    setAll(data ?? []);
   }
 
   useEffect(() => {
-    loadRecent();
+    loadAll();
+
+    // Live updates so a pitch logged by any teammate shows up for everyone
+    // without needing to refresh.
+    const channel = supabase
+      .channel("pitches-changes")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "pitches" },
+        (payload) => {
+          const inserted = payload.new as Pitch;
+          setAll((prev) =>
+            prev.some((p) => p.id === inserted.id) ? prev : [inserted, ...prev]
+          );
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   useEffect(() => {
@@ -43,18 +62,17 @@ export default function PitchApp({ name }: { name: string }) {
       return;
     }
     setSearching(true);
-    const handle = setTimeout(async () => {
-      const { data } = await supabase
-        .from("pitches")
-        .select("*")
-        .ilike("company_name", `%${trimmed}%`)
-        .order("created_at", { ascending: false })
-        .limit(10);
-      setResults(data ?? []);
+    const handle = setTimeout(() => {
+      const q = trimmed.toLowerCase();
+      setResults(
+        all
+          .filter((p) => p.company_name.toLowerCase().includes(q))
+          .slice(0, 50)
+      );
       setSearching(false);
-    }, 250);
+    }, 150);
     return () => clearTimeout(handle);
-  }, [query]);
+  }, [query, all]);
 
   const exactMatch = results.find(
     (r) => r.company_name.trim().toLowerCase() === query.trim().toLowerCase()
@@ -88,7 +106,7 @@ export default function PitchApp({ name }: { name: string }) {
     setQuery("");
     setNotes("");
     setResults([]);
-    loadRecent();
+    loadAll();
   }
 
   function switchUser() {
@@ -203,15 +221,21 @@ export default function PitchApp({ name }: { name: string }) {
 
       <div className="mt-8">
         <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-          Recently pitched
+          All pitched companies{" "}
+          <span className="font-normal text-slate-500 dark:text-slate-400">
+            ({all.length})
+          </span>
         </h2>
-        <div className="mt-3 space-y-2">
-          {recent.length === 0 && (
+        <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+          Visible to the whole team, updates live as pitches are logged.
+        </p>
+        <div className="mt-3 max-h-[28rem] space-y-2 overflow-y-auto pr-1">
+          {all.length === 0 && (
             <p className="text-sm text-slate-600 dark:text-slate-400">
               No pitches logged yet.
             </p>
           )}
-          {recent.map((r) => (
+          {all.map((r) => (
             <div
               key={r.id}
               className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
