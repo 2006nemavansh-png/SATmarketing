@@ -115,14 +115,14 @@ export default function PitchApp({ name }: { name: string }) {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8">
-      <div className="flex items-center justify-between">
+    <div className="mx-auto max-w-2xl px-4 py-6 sm:py-8">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-50">
           SAT Marketing
         </h1>
         <button
           onClick={switchUser}
-          className="rounded-md px-2 py-1 text-sm text-slate-600 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:text-slate-400 dark:hover:text-slate-100"
+          className="self-start rounded-md py-1.5 text-sm text-slate-600 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 sm:self-auto sm:px-2 dark:text-slate-400 dark:hover:text-slate-100"
         >
           Pitching as{" "}
           <span className="font-semibold text-slate-900 dark:text-slate-100">
@@ -132,7 +132,7 @@ export default function PitchApp({ name }: { name: string }) {
         </button>
       </div>
 
-      <div className="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="mt-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 dark:border-slate-700 dark:bg-slate-900">
         <label
           htmlFor="company-search"
           className="text-sm font-medium text-slate-800 dark:text-slate-200"
@@ -141,8 +141,7 @@ export default function PitchApp({ name }: { name: string }) {
         </label>
         <input
           id="company-search"
-          autoFocus
-          className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none placeholder:text-slate-500 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+          className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 outline-none placeholder:text-slate-500 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
           placeholder="Type a company name..."
           value={query}
           onChange={(e) => {
@@ -191,7 +190,7 @@ export default function PitchApp({ name }: { name: string }) {
             </label>
             <input
               id="pitch-notes"
-              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none placeholder:text-slate-500 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 outline-none placeholder:text-slate-500 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
               placeholder="Notes (optional)"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -199,7 +198,7 @@ export default function PitchApp({ name }: { name: string }) {
             <button
               onClick={logPitch}
               disabled={saving}
-              className="w-full rounded-md bg-indigo-700 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
+              className="w-full rounded-md bg-indigo-700 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
             >
               {saving ? "Saving..." : `Log "${query.trim()}" as pitched`}
             </button>
