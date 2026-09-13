@@ -96,3 +96,14 @@ export async function updatePitch(
   if (!res.ok) return { error: await parseError(res) };
   return { error: null };
 }
+
+export async function deletePitch(
+  id: string
+): Promise<{ error: RestError | null }> {
+  const res = await fetch(`${REST_URL}/pitches?id=eq.${id}`, {
+    method: "DELETE",
+    headers: { ...headers, Prefer: "return=minimal" },
+  });
+  if (!res.ok) return { error: await parseError(res) };
+  return { error: null };
+}

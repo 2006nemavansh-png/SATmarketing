@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchPitches, insertPitch, updatePitch, Pitch } from "@/lib/supabase";
+import {
+  fetchPitches,
+  insertPitch,
+  updatePitch,
+  deletePitch,
+  Pitch,
+} from "@/lib/supabase";
 import PitchMessage from "@/components/PitchMessage";
 
 const STORAGE_KEY = "sat-marketing-name";
@@ -33,6 +39,8 @@ export default function PitchApp({ name }: { name: string }) {
   const [editNotes, setEditNotes] = useState("");
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState("");
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   async function loadAll() {
     const data = await fetchPitches();
@@ -126,11 +134,30 @@ export default function PitchApp({ name }: { name: string }) {
     setEditCompanyName(r.company_name);
     setEditNotes(r.notes ?? "");
     setEditError("");
+    setConfirmingDelete(false);
   }
 
   function cancelEdit() {
     setEditingId(null);
     setEditError("");
+    setConfirmingDelete(false);
+  }
+
+  async function confirmDelete() {
+    if (!editingId) return;
+    setDeleting(true);
+    setEditError("");
+    const { error } = await deletePitch(editingId);
+    setDeleting(false);
+
+    if (error) {
+      setEditError("Could not delete. Try again.");
+      return;
+    }
+
+    setEditingId(null);
+    setConfirmingDelete(false);
+    loadAll();
   }
 
   async function saveEdit() {
@@ -413,22 +440,56 @@ export default function PitchApp({ name }: { name: string }) {
                       {editError}
                     </p>
                   )}
-                  <div className="mt-2 flex gap-2">
-                    <button
-                      onClick={saveEdit}
-                      disabled={editSaving || !editCompanyName.trim()}
-                      className="flex-1 rounded-md bg-indigo-700 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
-                    >
-                      {editSaving ? "Saving..." : "Save"}
-                    </button>
-                    <button
-                      onClick={cancelEdit}
-                      disabled={editSaving}
-                      className="flex-1 rounded-md bg-slate-200 py-2 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600"
-                    >
-                      Cancel
-                    </button>
-                  </div>
+
+                  {confirmingDelete ? (
+                    <div className="mt-3 rounded-md border border-red-300 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950/30">
+                      <p className="text-sm font-medium text-red-800 dark:text-red-300">
+                        Delete this reply for good?
+                      </p>
+                      <div className="mt-2 flex gap-2">
+                        <button
+                          onClick={confirmDelete}
+                          disabled={deleting}
+                          className="flex-1 rounded-md bg-red-700 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
+                        >
+                          {deleting ? "Deleting..." : "Yes, delete"}
+                        </button>
+                        <button
+                          onClick={() => setConfirmingDelete(false)}
+                          disabled={deleting}
+                          className="flex-1 rounded-md bg-slate-200 py-2 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-2 flex gap-2">
+                      <button
+                        onClick={saveEdit}
+                        disabled={editSaving || !editCompanyName.trim()}
+                        className="flex-1 rounded-md bg-indigo-700 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
+                      >
+                        {editSaving ? "Saving..." : "Save"}
+                      </button>
+                      <button
+                        onClick={cancelEdit}
+                        disabled={editSaving}
+                        className="flex-1 rounded-md bg-slate-200 py-2 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => setConfirmingDelete(true)}
+                        disabled={editSaving}
+                        title="Delete this reply"
+                        aria-label="Delete this reply"
+                        className="rounded-md bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-950/60"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             }
