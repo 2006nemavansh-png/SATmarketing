@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase, Pitch } from "@/lib/supabase";
+import { fetchPitches, insertPitch, Pitch } from "@/lib/supabase";
 import PitchMessage from "@/components/PitchMessage";
 
 const STORAGE_KEY = "sat-marketing-name";
@@ -24,37 +24,21 @@ export default function PitchApp({ name }: { name: string }) {
     null
   );
   const [saving, setSaving] = useState(false);
+  const [filterName, setFilterName] = useState("");
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest" | "az">(
+    "newest"
+  );
 
   async function loadAll() {
-    const { data } = await supabase
-      .from("pitches")
-      .select("*")
-      .order("created_at", { ascending: false });
-    setAll(data ?? []);
+    const data = await fetchPitches();
+    setAll(data);
   }
 
   useEffect(() => {
     loadAll();
 
-    // Live updates so a pitch logged by any teammate shows up for everyone
-    // without needing to refresh.
-    const channel = supabase
-      .channel("pitches-changes")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "pitches" },
-        (payload) => {
-          const inserted = payload.new as Pitch;
-          setAll((prev) =>
-            prev.some((p) => p.id === inserted.id) ? prev : [inserted, ...prev]
-          );
-        }
-      )
-      .subscribe();
-
-    // Realtime relies on a WebSocket, which some mobile networks or office
-    // wifi block or silently drop. Poll as a fallback so updates never
-    // depend on that connection alone, and refresh immediately whenever
+    // Poll for updates so a reply logged by any teammate shows up for
+    // everyone without a manual refresh, and refresh immediately whenever
     // someone comes back to a backgrounded tab.
     const interval = setInterval(loadAll, 5000);
     const onVisible = () => {
@@ -63,7 +47,6 @@ export default function PitchApp({ name }: { name: string }) {
     document.addEventListener("visibilitychange", onVisible);
 
     return () => {
-      supabase.removeChannel(channel);
       clearInterval(interval);
       document.removeEventListener("visibilitychange", onVisible);
     };
@@ -106,7 +89,7 @@ export default function PitchApp({ name }: { name: string }) {
     if (!trimmed) return;
     setSaving(true);
     setStatus(null);
-    const { error } = await supabase.from("pitches").insert({
+    const { error } = await insertPitch({
       company_name: trimmed,
       pitched_by: name,
       notes: notes.trim() || null,
@@ -131,6 +114,19 @@ export default function PitchApp({ name }: { name: string }) {
     setResults([]);
     loadAll();
   }
+
+  const teammates = Array.from(new Set(all.map((p) => p.pitched_by))).sort();
+
+  const visibleList = all
+    .filter((p) => !filterName || p.pitched_by === filterName)
+    .sort((a, b) => {
+      if (sortOrder === "az") {
+        return a.company_name.localeCompare(b.company_name);
+      }
+      const diff =
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      return sortOrder === "oldest" ? diff : -diff;
+    });
 
   function switchUser() {
     window.localStorage.removeItem(STORAGE_KEY);
@@ -289,13 +285,59 @@ export default function PitchApp({ name }: { name: string }) {
         <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
           Visible to the whole team, updates live as replies are logged.
         </p>
+
+        {all.length > 0 && (
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+            <div className="flex-1">
+              <label htmlFor="filter-name" className="sr-only">
+                Filter by teammate
+              </label>
+              <select
+                id="filter-name"
+                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                value={filterName}
+                onChange={(e) => setFilterName(e.target.value)}
+              >
+                <option value="">All teammates</option>
+                {teammates.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex-1">
+              <label htmlFor="sort-order" className="sr-only">
+                Sort order
+              </label>
+              <select
+                id="sort-order"
+                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                value={sortOrder}
+                onChange={(e) =>
+                  setSortOrder(e.target.value as "newest" | "oldest" | "az")
+                }
+              >
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+                <option value="az">Company A–Z</option>
+              </select>
+            </div>
+          </div>
+        )}
+
         <div className="mt-3 space-y-2">
           {all.length === 0 && (
             <p className="text-sm text-slate-600 dark:text-slate-400">
               No replies logged yet.
             </p>
           )}
-          {all.map((r) => (
+          {all.length > 0 && visibleList.length === 0 && (
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              No replies match this filter.
+            </p>
+          )}
+          {visibleList.map((r) => (
             <div
               key={r.id}
               className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"

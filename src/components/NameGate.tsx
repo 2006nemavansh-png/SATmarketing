@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase, TeamMember } from "@/lib/supabase";
+import { fetchTeamMembers, insertTeamMember, TeamMember } from "@/lib/supabase";
 
 const STORAGE_KEY = "sat-marketing-name";
 
@@ -23,15 +23,11 @@ export default function NameGate({
       onNamed(saved);
       return;
     }
-    supabase
-      .from("team_members")
-      .select("*")
-      .order("name", { ascending: true })
-      .then(({ data }) => {
-        setMembers(data ?? []);
-        setMode(data && data.length > 0 ? "pick" : "new");
-        setLoading(false);
-      });
+    fetchTeamMembers().then((data) => {
+      setMembers(data);
+      setMode(data.length > 0 ? "pick" : "new");
+      setLoading(false);
+    });
   }, [onNamed]);
 
   async function confirmExisting() {
@@ -44,9 +40,7 @@ export default function NameGate({
     const trimmed = newName.trim();
     if (!trimmed) return;
     setError("");
-    const { error: insertError } = await supabase
-      .from("team_members")
-      .insert({ name: trimmed });
+    const { error: insertError } = await insertTeamMember(trimmed);
 
     if (insertError && insertError.code !== "23505") {
       setError("Could not save your name. Try again.");
