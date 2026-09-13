@@ -83,3 +83,16 @@ export async function insertPitch(pitch: {
   if (!res.ok) return { error: await parseError(res) };
   return { error: null };
 }
+
+export async function updatePitch(
+  id: string,
+  updates: { company_name: string; notes: string | null }
+): Promise<{ error: RestError | null }> {
+  const res = await fetch(`${REST_URL}/pitches?id=eq.${id}`, {
+    method: "PATCH",
+    headers: { ...headers, Prefer: "return=minimal" },
+    body: JSON.stringify(updates),
+  });
+  if (!res.ok) return { error: await parseError(res) };
+  return { error: null };
+}

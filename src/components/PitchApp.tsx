@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchPitches, insertPitch, Pitch } from "@/lib/supabase";
+import { fetchPitches, insertPitch, updatePitch, Pitch } from "@/lib/supabase";
 import PitchMessage from "@/components/PitchMessage";
 
 const STORAGE_KEY = "sat-marketing-name";
@@ -28,6 +28,11 @@ export default function PitchApp({ name }: { name: string }) {
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest" | "az">(
     "newest"
   );
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editCompanyName, setEditCompanyName] = useState("");
+  const [editNotes, setEditNotes] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState("");
 
   async function loadAll() {
     const data = await fetchPitches();
@@ -112,6 +117,43 @@ export default function PitchApp({ name }: { name: string }) {
     setQuery("");
     setNotes("");
     setResults([]);
+    loadAll();
+  }
+
+  function startEdit(r: Pitch) {
+    if (r.pitched_by !== name) return;
+    setEditingId(r.id);
+    setEditCompanyName(r.company_name);
+    setEditNotes(r.notes ?? "");
+    setEditError("");
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditError("");
+  }
+
+  async function saveEdit() {
+    const trimmed = editCompanyName.trim();
+    if (!trimmed || !editingId) return;
+    setEditSaving(true);
+    setEditError("");
+    const { error } = await updatePitch(editingId, {
+      company_name: trimmed,
+      notes: editNotes.trim() || null,
+    });
+    setEditSaving(false);
+
+    if (error) {
+      setEditError(
+        error.code === "23505"
+          ? "Another logged reply already uses that company name."
+          : "Could not save. Try again."
+      );
+      return;
+    }
+
+    setEditingId(null);
     loadAll();
   }
 
@@ -337,24 +379,93 @@ export default function PitchApp({ name }: { name: string }) {
               No replies match this filter.
             </p>
           )}
-          {visibleList.map((r) => (
-            <div
-              key={r.id}
-              className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-            >
-              <span className="font-semibold">{r.company_name}</span>
-              <span className="text-slate-600 dark:text-slate-400">
-                {" "}
-                · handled by {r.pitched_by} · replied{" "}
-                {formatDate(r.created_at)}
-              </span>
-              {r.notes && (
-                <p className="mt-1 text-slate-600 dark:text-slate-400">
-                  Notes: {r.notes}
-                </p>
-              )}
-            </div>
-          ))}
+          {visibleList.map((r) => {
+            const isMine = r.pitched_by === name;
+            const isEditing = editingId === r.id;
+
+            if (isEditing) {
+              return (
+                <div
+                  key={r.id}
+                  className="rounded-md border border-indigo-300 bg-indigo-50 px-3 py-3 text-sm dark:border-indigo-700 dark:bg-indigo-950/30"
+                >
+                  <label htmlFor={`edit-name-${r.id}`} className="sr-only">
+                    Company name
+                  </label>
+                  <input
+                    id={`edit-name-${r.id}`}
+                    className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                    value={editCompanyName}
+                    onChange={(e) => setEditCompanyName(e.target.value)}
+                  />
+                  <label htmlFor={`edit-notes-${r.id}`} className="sr-only">
+                    Notes
+                  </label>
+                  <input
+                    id={`edit-notes-${r.id}`}
+                    className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                    placeholder="Notes (optional)"
+                    value={editNotes}
+                    onChange={(e) => setEditNotes(e.target.value)}
+                  />
+                  {editError && (
+                    <p className="mt-2 text-sm font-medium text-red-700 dark:text-red-400">
+                      {editError}
+                    </p>
+                  )}
+                  <div className="mt-2 flex gap-2">
+                    <button
+                      onClick={saveEdit}
+                      disabled={editSaving || !editCompanyName.trim()}
+                      className="flex-1 rounded-md bg-indigo-700 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
+                    >
+                      {editSaving ? "Saving..." : "Save"}
+                    </button>
+                    <button
+                      onClick={cancelEdit}
+                      disabled={editSaving}
+                      className="flex-1 rounded-md bg-slate-200 py-2 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <div
+                key={r.id}
+                onClick={() => startEdit(r)}
+                role={isMine ? "button" : undefined}
+                tabIndex={isMine ? 0 : undefined}
+                onKeyDown={(e) => {
+                  if (isMine && (e.key === "Enter" || e.key === " ")) {
+                    e.preventDefault();
+                    startEdit(r);
+                  }
+                }}
+                title={isMine ? "Click to edit" : undefined}
+                className={`rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 ${
+                  isMine
+                    ? "cursor-pointer transition-colors hover:border-indigo-300 hover:bg-indigo-50/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:hover:bg-indigo-950/20"
+                    : ""
+                }`}
+              >
+                <span className="font-semibold">{r.company_name}</span>
+                <span className="text-slate-600 dark:text-slate-400">
+                  {" "}
+                  · handled by {r.pitched_by} · replied{" "}
+                  {formatDate(r.created_at)}
+                </span>
+                {r.notes && (
+                  <p className="mt-1 text-slate-600 dark:text-slate-400">
+                    Notes: {r.notes}
+                  </p>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
         </>
