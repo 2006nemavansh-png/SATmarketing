@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase, Pitch } from "@/lib/supabase";
+import PitchMessage from "@/components/PitchMessage";
 
 const STORAGE_KEY = "sat-marketing-name";
 
@@ -13,6 +14,7 @@ function formatDate(iso: string) {
 }
 
 export default function PitchApp({ name }: { name: string }) {
+  const [tab, setTab] = useState<"track" | "message">("track");
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Pitch[]>([]);
   const [searching, setSearching] = useState(false);
@@ -153,6 +155,39 @@ export default function PitchApp({ name }: { name: string }) {
         </button>
       </div>
 
+      <div className="mt-6 flex gap-2 text-sm" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "track"}
+          className={`flex-1 rounded-md px-3 py-2 font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 ${
+            tab === "track"
+              ? "bg-indigo-700 text-white"
+              : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+          }`}
+          onClick={() => setTab("track")}
+        >
+          Search &amp; log
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "message"}
+          className={`flex-1 rounded-md px-3 py-2 font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 ${
+            tab === "message"
+              ? "bg-indigo-700 text-white"
+              : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+          }`}
+          onClick={() => setTab("message")}
+        >
+          Generate pitch message
+        </button>
+      </div>
+
+      {tab === "message" && <PitchMessage />}
+
+      {tab === "track" && (
+        <>
       <div className="mt-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 dark:border-slate-700 dark:bg-slate-900">
         <label
           htmlFor="company-search"
@@ -274,6 +309,8 @@ export default function PitchApp({ name }: { name: string }) {
           ))}
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }
