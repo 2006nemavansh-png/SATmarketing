@@ -79,6 +79,15 @@ export default function PitchApp({ name }: { name: string }) {
       setResults(
         all
           .filter((p) => p.company_name.toLowerCase().includes(q))
+          .sort((a, b) => {
+            const aStarts = a.company_name.toLowerCase().startsWith(q);
+            const bStarts = b.company_name.toLowerCase().startsWith(q);
+            if (aStarts !== bStarts) return aStarts ? -1 : 1;
+            return (
+              new Date(b.created_at).getTime() -
+              new Date(a.created_at).getTime()
+            );
+          })
           .slice(0, 50)
       );
       setSearching(false);
