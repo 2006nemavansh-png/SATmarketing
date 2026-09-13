@@ -50,8 +50,20 @@ export default function PitchApp({ name }: { name: string }) {
       )
       .subscribe();
 
+    // Realtime relies on a WebSocket, which some mobile networks or office
+    // wifi block or silently drop. Poll as a fallback so updates never
+    // depend on that connection alone, and refresh immediately whenever
+    // someone comes back to a backgrounded tab.
+    const interval = setInterval(loadAll, 5000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") loadAll();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+
     return () => {
       supabase.removeChannel(channel);
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, []);
 
