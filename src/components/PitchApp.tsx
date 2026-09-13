@@ -240,7 +240,7 @@ export default function PitchApp({ name }: { name: string }) {
         <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
           Visible to the whole team, updates live as pitches are logged.
         </p>
-        <div className="mt-3 max-h-[28rem] space-y-2 overflow-y-auto pr-1">
+        <div className="mt-3 space-y-2">
           {all.length === 0 && (
             <p className="text-sm text-slate-600 dark:text-slate-400">
               No pitches logged yet.
