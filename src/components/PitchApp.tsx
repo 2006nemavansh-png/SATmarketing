@@ -117,7 +117,7 @@ export default function PitchApp({ name }: { name: string }) {
       if (error.code === "23505") {
         setStatus({
           type: "err",
-          text: "That company was just logged by someone else. Refresh and check.",
+          text: "That company's reply was just logged by someone else. Refresh and check.",
         });
       } else {
         setStatus({ type: "err", text: "Could not save. Try again." });
@@ -125,7 +125,7 @@ export default function PitchApp({ name }: { name: string }) {
       return;
     }
 
-    setStatus({ type: "ok", text: `Logged "${trimmed}" as pitched.` });
+    setStatus({ type: "ok", text: `Logged "${trimmed}" — reply received.` });
     setQuery("");
     setNotes("");
     setResults([]);
@@ -167,7 +167,7 @@ export default function PitchApp({ name }: { name: string }) {
           }`}
           onClick={() => setTab("track")}
         >
-          Search &amp; log
+          Search &amp; log replies
         </button>
         <button
           type="button"
@@ -193,7 +193,7 @@ export default function PitchApp({ name }: { name: string }) {
           htmlFor="company-search"
           className="text-sm font-medium text-slate-800 dark:text-slate-200"
         >
-          Search a company before you pitch
+          Search a company before messaging them
         </label>
         <input
           id="company-search"
@@ -205,6 +205,11 @@ export default function PitchApp({ name }: { name: string }) {
             setStatus(null);
           }}
         />
+        <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">
+          Only log a company once they&apos;ve actually replied — sending the
+          DM alone doesn&apos;t count, since we can&apos;t know in advance
+          who&apos;ll respond.
+        </p>
 
         {searching && (
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
@@ -220,8 +225,8 @@ export default function PitchApp({ name }: { name: string }) {
                 className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-950 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-100"
               >
                 <span className="font-semibold">{r.company_name}</span>{" "}
-                already pitched by{" "}
-                <span className="font-semibold">{r.pitched_by}</span> on{" "}
+                already replied — being handled by{" "}
+                <span className="font-semibold">{r.pitched_by}</span> since{" "}
                 {formatDate(r.created_at)}
                 {r.notes && (
                   <p className="mt-1 text-amber-900 dark:text-amber-200">
@@ -235,7 +240,7 @@ export default function PitchApp({ name }: { name: string }) {
 
         {!searching && query.trim() && results.length === 0 && (
           <p className="mt-3 text-sm font-medium text-emerald-700 dark:text-emerald-400">
-            No matches — this company hasn&apos;t been pitched yet.
+            No matches — no reply logged for this company yet.
           </p>
         )}
 
@@ -256,7 +261,7 @@ export default function PitchApp({ name }: { name: string }) {
               disabled={saving}
               className="w-full rounded-md bg-indigo-700 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 dark:disabled:bg-slate-700 dark:disabled:text-slate-400"
             >
-              {saving ? "Saving..." : `Log "${query.trim()}" as pitched`}
+              {saving ? "Saving..." : `Log "${query.trim()}" as replied`}
             </button>
           </div>
         )}
@@ -276,18 +281,18 @@ export default function PitchApp({ name }: { name: string }) {
 
       <div className="mt-8">
         <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-          All pitched companies{" "}
+          Companies that replied{" "}
           <span className="font-normal text-slate-500 dark:text-slate-400">
             ({all.length})
           </span>
         </h2>
         <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
-          Visible to the whole team, updates live as pitches are logged.
+          Visible to the whole team, updates live as replies are logged.
         </p>
         <div className="mt-3 space-y-2">
           {all.length === 0 && (
             <p className="text-sm text-slate-600 dark:text-slate-400">
-              No pitches logged yet.
+              No replies logged yet.
             </p>
           )}
           {all.map((r) => (
@@ -298,7 +303,8 @@ export default function PitchApp({ name }: { name: string }) {
               <span className="font-semibold">{r.company_name}</span>
               <span className="text-slate-600 dark:text-slate-400">
                 {" "}
-                · {r.pitched_by} · {formatDate(r.created_at)}
+                · handled by {r.pitched_by} · replied{" "}
+                {formatDate(r.created_at)}
               </span>
               {r.notes && (
                 <p className="mt-1 text-slate-600 dark:text-slate-400">
