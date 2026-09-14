@@ -249,7 +249,7 @@ export default function PitchApp({ name }: { name: string }) {
         </button>
       </div>
 
-      {tab === "message" && <PitchMessage />}
+      {tab === "message" && <PitchMessage senderName={name} />}
 
       {tab === "track" && (
         <>
